@@ -1,6 +1,10 @@
+// The goal is to find which shelf a particular book belongs to. Each shelf has an expected total weigth and a list of ids for books currently on that shelf.
+// The shelf of the missing book can be found by splitting the dynamic arrays of book ids per shelf into separate rows, summing the weight of books on each row, 
+// then finding the largest discrepancy between expected shelf weight and weight of books currently on the shelf.
+
 Shelves
-| mv-expand rf_ids 
-| extend rf_ids = tostring(rf_ids) 
+| mv-expand rf_ids // get comma-separated arrays as separate rows
+| extend rf_ids = tostring(rf_ids) // change dynamic type to string
 | join (Books) on $left.rf_ids == $right.rf_id
 | summarize sum(weight_gram) by shelf, total_weight
 | extend diff=abs(sum_weight_gram - total_weight)
