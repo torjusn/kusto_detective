@@ -1,0 +1,50 @@
+// TASK
+//------------------------------------------------------------------------------------------------------------
+// Given a "Votes" table with Timestamp, vote, via_ip, vote and voter_hash_id we are asked to 
+// discover and remove suspicious/cheating votes
+
+// DATA EXPLORATION
+//------------------------------------------------------------------------------------------------------------
+// the hint asks if timing is strange for each vote per ip.
+// this can be checked by grouping each ip together, then the votes into separate bins based on time
+// we then disover that poppy got suspiciously large amounts of votes in smaller timebuckets
+Votes
+| summarize count() by bin(Timestamp, 1s), via_ip, vote
+
+// trial with removing duplicate hash then non-distinct votes per bin per ip
+Votes
+| summarize any(*) by voter_hash_id // remove duplicate hash
+| extend myBin=bin(any_Timestamp, 10s)
+| summarize any(*) by myBin, any_via_ip // remove votes in same time_bucket at same ip
+| order by any_via_ip asc, any_any_Timestamp asc
+ 
+// distinct by group
+Votes
+| summarize any(*) by voter_hash_id // remove duplicate hash
+| extend myBin=bin(any_Timestamp, 10s)
+| summarize any(*) by myBin, any_via_ip // remove votes in same time_bucket at same ip
+| order by any_via_ip asc, any_any_Timestamp asc
+
+// Query that counts the votes:
+Votes
+| summarize Count=count() by vote
+| as hint.materialized=true T
+| extend Total = toscalar(T | summarize sum(Count))
+| project vote, Percentage = round(Count*100.0 / Total, 1), Count
+| order by Count
+
+## SOLUTION
+//------------------------------------------------------------------------------------------------------------
+
+// found that removal of duplicate voter_hash_id was not needed through trial
+// only need to create a separate column with timebins, then remove non-distinct votes in those bins per ip
+
+Votes
+| extend myBin=bin(Timestamp, 1m)
+| summarize any(*) by myBin, via_ip // remove votes in same time_bucket at same ip
+// use provided count query
+| summarize Count=count() by any_vote
+| as hint.materialized=true T
+| extend Total = toscalar(T | summarize sum(Count))
+| project any_vote, Percentage = round(Count*100.0 / Total, 1), Count
+| order by Count

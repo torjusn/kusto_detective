@@ -1,4 +1,10 @@
+// TASK
+//------------------------------------------------------------------------------------------------------------
 // The goal is to find which shelf a particular book belongs to. Each shelf has an expected total weigth and a list of ids for books currently on that shelf.
+
+
+// SOLUTION
+//------------------------------------------------------------------------------------------------------------
 // The shelf of the missing book can be found by splitting the dynamic arrays of book ids per shelf into separate rows, summing the weight of books on each row, 
 // then finding the largest discrepancy between expected shelf weight and weight of books currently on the shelf.
 
